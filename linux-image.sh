@@ -136,7 +136,7 @@ if [ -n "$PROXY" ] ; then
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
 
-cp binary-amlogic/boot.init p1/
+cp binary-amlogic/boot.ini p1/
 
 umount p2
 umount p1

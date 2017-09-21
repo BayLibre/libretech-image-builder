@@ -14,7 +14,7 @@ echo "libre:computer" | chpasswd
 adduser libre sudo
 apt-get update
 apt-get -y dist-upgrade
-apt-get install -y vim build-essential git xubuntu-desktop
+apt-get install -y vim build-essential git xubuntu-core
 
 # disable mesa EGL libs
 rm /etc/ld.so.conf.d/*_EGL.conf
