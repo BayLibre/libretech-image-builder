@@ -15,8 +15,8 @@ Steps
 
 ```
 # ./init.sh
-# ./linux-image.sh
-# sudo ./build_linux.sh
+# ./build_linux.sh
+# sudo ./linux-image.sh
 # sudo ./clean.sh
 ```
 
