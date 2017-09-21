@@ -1,0 +1,107 @@
+#!/bin/bash
+set -x
+RAM=1
+IMAGE_FOLDER=""
+IMAGE_VERSION="linux-libretech"
+IMAGE_DEVICE_TREE="amlogic/meson-gxl-s905x-libretech-cc"
+if [ ! -z "$1" ]; then
+	IMAGE_VERSION="$1"
+fi
+if [ ! -z "$2" ]; then
+	IMAGE_DEVICE_TREE="$2"
+fi
+if [ ! -f "$IMAGE_VERSION/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dts" ]; then
+	echo "Missing Device Tree"
+	exit 1
+fi
+set -eux -o pipefail
+IMAGE_LINUX_LOADADDR="0x1080000"
+IMAGE_LINUX_VERSION=`head -n 1 $IMAGE_VERSION/include/config/kernel.release | xargs echo -n`
+IMAGE_FILE_SUFFIX="$(date +%F)"
+IMAGE_FILE_NAME="aml-s905x-cc-ubuntu-xenial-${IMAGE_VERSION}-${IMAGE_LINUX_VERSION}-${IMAGE_FILE_SUFFIX}.img"
+if [ $RAM -ne 0 ]; then
+	IMAGE_FOLDER="ram/"
+fi
+mkdir -p "$IMAGE_FOLDER"
+if [ $RAM -ne 0 ]; then
+	mount -t tmpfs -o size=1G tmpfs $IMAGE_FOLDER
+fi
+truncate -s 1G "${IMAGE_FOLDER}${IMAGE_FILE_NAME}"
+fdisk "${IMAGE_FOLDER}${IMAGE_FILE_NAME}" <<EOF
+o
+n
+p
+1
+2048
+524287
+a
+t
+b
+n
+p
+2
+524288
+
+p
+w
+
+EOF
+IMAGE_LOOP_DEV="$(losetup --show -f ${IMAGE_FOLDER}${IMAGE_FILE_NAME})"
+IMAGE_LOOP_DEV_BOOT="${IMAGE_LOOP_DEV}p1"
+IMAGE_LOOP_DEV_ROOT="${IMAGE_LOOP_DEV}p2"
+partprobe "${IMAGE_LOOP_DEV}"
+mkfs.vfat -n BOOT "${IMAGE_LOOP_DEV_BOOT}"
+mkfs.btrfs -f -L ROOT "${IMAGE_LOOP_DEV_ROOT}"
+mkdir -p p1 p2
+mount "${IMAGE_LOOP_DEV_BOOT}" p1
+mount "${IMAGE_LOOP_DEV_ROOT}" p2
+btrfs subvolume create p2/@
+sync
+umount p2
+mount -o compress=lzo,noatime,subvol=@ "${IMAGE_LOOP_DEV_ROOT}" p2
+
+PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- install INSTALL_PATH=$PWD/p1/
+mkimage -A arm64 -O linux -T kernel -C none -a $IMAGE_LINUX_LOADADDR -e $IMAGE_LINUX_LOADADDR -n linux-$IMAGE_LINUX_VERSION -d p1/vmlinuz-$IMAGE_LINUX_VERSION p1/uImage
+#cp ${IMAGE_VERSION}/arch/arm64/boot/Image p1/Image
+cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/${IMAGE_DEVICE_TREE##*/}.dtb
+PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- headers_install INSTALL_HDR_PATH=$PWD/p2/usr/
+PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
+PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
+mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
+echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
+http_proxy="http://127.0.0.1:3142" qemu-debootstrap --arch arm64 xenial p2
+tee p2/etc/apt/sources.list.d/ubuntu-ports.list <<EOF
+deb http://ports.ubuntu.com/ubuntu-ports/ trusty main universe multiverse restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main universe multiverse restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security main universe multiverse restricted
+EOF
+tee p2/etc/fstab <<EOF
+/dev/root	/	btrfs	defaults,compress=lzo,noatime,subvol=@ 0 1
+EOF
+tee "p2/etc/apt/apt.conf.d/30proxy" <<EOF
+Acquire::http::proxy "http://127.0.0.1:3142";
+EOF
+cp /usr/bin/qemu-aarch64-static p2/usr/bin/
+cp stage2.sh p2/root
+mount -o bind /dev p2/dev
+mount -o bind /dev/pts p2/dev/pts
+chroot p2 /root/stage2.sh
+umount p2/dev/pts
+umount p2/dev
+rm p2/root/stage2.sh
+rm p2/etc/apt/apt.conf.d/30proxy
+rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
+
+umount p2
+umount p1
+
+dd if=binary-amlogic/u-boot.bin.sd.bin of="${IMAGE_LOOP_DEV}" conv=fsync bs=1 count=442
+dd if=binary-amlogic/u-boot.bin.sd.bin of="${IMAGE_LOOP_DEV}" conv=fsync bs=512 skip=1 seek=1
+
+losetup -d "${IMAGE_LOOP_DEV}"
+if [ $RAM -ne 0 ]; then
+	mv "${IMAGE_FOLDER}${IMAGE_FILE_NAME}" "${IMAGE_FILE_NAME}"
+	umount "${IMAGE_FOLDER}"
+	rmdir "${IMAGE_FOLDER}"
+fi
+rmdir p1 p2
