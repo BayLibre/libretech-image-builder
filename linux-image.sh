@@ -107,7 +107,7 @@ tar xfz buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
 rm buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
 
 mkdir -p p2/usr/lib/mali
-cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450/libMali.so p2/usr/lib/mali/
+cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450-X/libMali.so p2/usr/lib/mali/
 cd p2/usr/lib/mali
 ln -s libMali.so libGLESv2.so.2.0
 ln -s libMali.so libGLESv1_CM.so.1.1
