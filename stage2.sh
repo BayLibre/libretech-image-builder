@@ -38,6 +38,7 @@ apt-get install -y build-essential git libtool automake autoconf xutils-dev xser
 git clone https://github.com/superna9999/xf86-video-armsoc.git -b meson-drm
 cd xf86-video-armsoc
 ./autogen.sh
+./configure --prefix=/usr
 make install
 mkdir -p /etc/X11
 cp xorg.conf /etc/X11/
