@@ -14,7 +14,15 @@ echo "libre:computer" | chpasswd
 adduser libre sudo
 apt-get update
 apt-get -y dist-upgrade
-apt-get install -y vim build-essential git xubuntu-core
+
+apt-get install -y vim
+apt-get install -y dbus
+service dbus start
+apt-get install -y xubuntu-desktop
+service dbus stop
+
+# Clean up packages
+apt-get -y clean
+apt-get -y autoclean
 
 umount /proc /sys
-
