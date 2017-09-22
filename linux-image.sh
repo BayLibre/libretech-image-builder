@@ -136,6 +136,11 @@ if [ -n "$PROXY" ] ; then
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
 
+# Mali udev rule
+tee p2/etc/udev/rules.d/50-mali.rules <<EOF
+KERNEL=="mali", MODE="0660", GROUP="video"
+EOF
+
 cp binary-amlogic/boot.ini p1/
 
 umount p2
