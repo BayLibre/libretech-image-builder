@@ -9,9 +9,6 @@ locale-gen "en_US.UTF-8"
 dpkg-reconfigure locales
 echo -n 'libre-computer-board' > /etc/hostname
 sed -i '1 a 127.0.1.1	libre-computer-board' /etc/hosts
-adduser libre --gecos "Libre Computer Board,,," --disabled-password
-echo "libre:computer" | chpasswd
-adduser libre sudo
 apt-get update
 apt-get -y dist-upgrade
 
@@ -24,5 +21,12 @@ service dbus stop
 # Clean up packages
 apt-get -y clean
 apt-get -y autoclean
+
+adduser libre --gecos "Libre Computer Board,,," --disabled-password
+echo "libre:computer" | chpasswd
+adduser libre sudo
+adduser libre audio
+adduser libre dialout
+adduser libre video
 
 umount /proc /sys

@@ -65,9 +65,9 @@ umount p2
 mount -o compress=lzo,noatime,subvol=@ "${IMAGE_LOOP_DEV_ROOT}" p2
 
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- install INSTALL_PATH=$PWD/p1/
-mkimage -A arm64 -O linux -T kernel -C none -a $IMAGE_LINUX_LOADADDR -e $IMAGE_LINUX_LOADADDR -n linux-$IMAGE_LINUX_VERSION -d p1/vmlinuz-$IMAGE_LINUX_VERSION p1/uImage
-#cp ${IMAGE_VERSION}/arch/arm64/boot/Image p1/Image
-cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/${IMAGE_DEVICE_TREE##*/}.dtb
+cp ${IMAGE_VERSION}/arch/arm64/boot/Image p1/Image
+mkdir -p p1/$(dirname $IMAGE_DEVICE_TREE)
+cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/$(dirname $IMAGE_DEVICE_TREE)
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- headers_install INSTALL_HDR_PATH=$PWD/p2/usr/
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
@@ -106,7 +106,9 @@ if [ -n "$PROXY" ] ; then
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
 
-cp binary-amlogic/boot.ini p1/
+binary-amlogic/mkimage -C none -A arm -T script -d binary-amlogic/boot.cmd p1/boot.scr
+
+btrfs filesystem defragment -f -r p2
 
 umount p2
 umount p1
