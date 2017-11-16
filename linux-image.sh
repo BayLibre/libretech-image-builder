@@ -74,10 +74,14 @@ PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch6
 
 mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
+mkdir -p p2/usr/bin
+cp $(which "qemu-aarch64-static") p2/usr/bin
 if [ -n "$PROXY" ] ; then
-	http_proxy="$PROXY" qemu-debootstrap --arch arm64 xenial p2
+    http_proxy="$PROXY" debootstrap --arch arm64 --foreign xenial p2
+    http_proxy="$PROXY" chroot p2 /debootstrap/debootstrap --second-stage
 else
-	qemu-debootstrap --arch arm64 xenial p2
+    debootstrap --arch arm64 --foreign xenial p2
+    chroot p2 /debootstrap/debootstrap --second-stage
 fi
 tee p2/etc/apt/sources.list.d/ubuntu-ports.list <<EOF
 deb http://ports.ubuntu.com/ubuntu-ports/ xenial universe multiverse restricted
@@ -93,7 +97,6 @@ Acquire::http::proxy "http://127.0.0.1:3142";
 EOF
 fi
 
-cp /usr/bin/qemu-aarch64-static p2/usr/bin/
 cp stage2.sh p2/root
 mount -o bind /dev p2/dev
 mount -o bind /dev/pts p2/dev/pts
