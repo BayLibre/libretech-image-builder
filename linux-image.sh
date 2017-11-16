@@ -70,7 +70,7 @@ mkimage -A arm64 -O linux -T kernel -C none -a $IMAGE_LINUX_LOADADDR -e $IMAGE_L
 cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/${IMAGE_DEVICE_TREE##*/}.dtb
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- headers_install INSTALL_HDR_PATH=$PWD/p2/usr/
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
-PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
+#PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
 
 mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
