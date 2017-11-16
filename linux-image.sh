@@ -1,6 +1,6 @@
 #!/bin/bash
 set -x
-export PATH=$PWD/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin:$PATH
+export PATH=$PWD/gcc-linaro-6.4.1-2017.08-x86_64_aarch64-linux-gnu/bin:$PATH
 #RAM=1
 RAM=0
 #PROXY="http://127.0.0.1:3142"
