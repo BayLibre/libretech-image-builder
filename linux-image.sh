@@ -72,6 +72,14 @@ PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch6
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
 #PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
 
+# Mali Kernel driver
+git clone https://github.com/superna9999/meson_gx_mali_450 -b DX910-SW-99002-r7p0-00rel1_meson_gx --depth 1
+(cd meson_gx_mali_450 && KDIR=$PWD/../$IMAGE_VERSION ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- ./build.sh)
+VER=$(ls p2/lib/modules/)
+sudo cp meson_gx_mali_450/mali.ko p2/lib/modules/$VER/kernel/
+sudo depmod -b p2/ -a $VER
+rm -fr meson_gx_mali_450
+
 mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
 mkdir -p p2/usr/bin
@@ -97,6 +105,28 @@ Acquire::http::proxy "http://127.0.0.1:3142";
 EOF
 fi
 
+# libMali X11
+wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.12/buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+tar xfz buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+rm buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+
+mkdir -p p2/usr/lib/mali
+cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450-X/libMali.so p2/usr/lib/mali/
+cd p2/usr/lib/mali
+ln -s libMali.so libGLESv2.so.2.0
+ln -s libMali.so libGLESv1_CM.so.1.1
+ln -s libMali.so libEGL.so.1.4
+ln -s libGLESv2.so.2.0 libGLESv2.so.2
+ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
+ln -s libEGL.so.1.4 libEGL.so.1
+ln -s libGLESv2.so.2 libGLESv2.so
+ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
+ln -s libEGL.so.1 libEGL.so
+cd -
+cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
+echo /usr/lib/mali > p2/etc/ld.so.conf.d/mali.conf
+rm -fr buildroot_openlinux
+
 cp stage2.sh p2/root
 mount -o bind /dev p2/dev
 mount -o bind /dev/pts p2/dev/pts
@@ -108,6 +138,11 @@ if [ -n "$PROXY" ] ; then
 	rm p2/etc/apt/apt.conf.d/30proxy
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
+
+# Mali udev rule
+tee p2/etc/udev/rules.d/50-mali.rules <<EOF
+KERNEL=="mali", MODE="0660", GROUP="video"
+EOF
 
 binary-amlogic/mkimage -C none -A arm -T script -d binary-amlogic/boot.cmd p1/boot.scr
 
