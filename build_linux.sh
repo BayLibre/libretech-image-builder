@@ -1,4 +1,4 @@
-git clone https://github.com/libre-computer-project/libretech-linux.git -b linux-4.14/libretech-cc-master --depth 1 linux-libretech
+git clone https://github.com/libre-computer-project/libretech-linux.git -b linux-4.14/libretech-cc-master-stable --depth 1 linux-libretech
 cd linux-libretech
 make ARCH=arm64 defconfig
 git apply ../patches/0001-meson_drm_disable_ARGB8888.patch
