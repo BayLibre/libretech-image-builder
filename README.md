@@ -7,7 +7,7 @@ Prerequesite
 On an Ubuntu 16.04 x86_64/AMD64 system :
 
 ```
-# sudo apt install build-essential bc git qemu debootstrap qemu-user-static
+# sudo apt install build-essential bc git qemu debootstrap qemu-user-static btrfs-tools
 ```
 
 Steps
