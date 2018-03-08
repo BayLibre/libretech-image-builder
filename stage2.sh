@@ -4,29 +4,33 @@ set -eux -o pipefail
 mount -t proc proc proc/
 mount -t sysfs sys sys/
 
-export DEBIAN_FRONTEND="noninteractive"
 locale-gen "en_US.UTF-8"
-dpkg-reconfigure locales
 echo -n 'libre-computer-board' > /etc/hostname
 sed -i '1 a 127.0.1.1	libre-computer-board' /etc/hosts
-apt-get update
-apt-get -y dist-upgrade
 
-apt-get install -y vim
-apt-get install -y dbus
-service dbus start
-apt-get install -y xubuntu-desktop
-service dbus stop
+echo "/dev/mmcblk1p2 / ext4 defaults 0 1" >> /etc/fstab
 
-# Clean up packages
-apt-get -y clean
-apt-get -y autoclean
+pacman -Syyu --noconfirm
+pacman -Sq --noconfirm gnome
+pacman -Sq --noconfirm gdm
 
-adduser libre --gecos "Libre Computer Board,,," --disabled-password
+systemctl enable gdm.service
+
+rm /etc/resolv.conf
+ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+
+echo "[Match]
+Name=en*
+
+[Network]
+DHCP=yes" > /etc/systemd/network/50-wired.network
+
+useradd -mU libre --comment "Libre Computer Board,,," --password ""
 echo "libre:computer" | chpasswd
-adduser libre sudo
-adduser libre audio
-adduser libre dialout
-adduser libre video
+groupmems -g audio -a libre
+groupmems -g video -a libre
 
 umount /proc /sys

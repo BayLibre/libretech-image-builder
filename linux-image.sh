@@ -22,7 +22,7 @@ set -eux -o pipefail
 IMAGE_LINUX_LOADADDR="0x1080000"
 IMAGE_LINUX_VERSION=`head -n 1 $IMAGE_VERSION/include/config/kernel.release | xargs echo -n`
 IMAGE_FILE_SUFFIX="$(date +%F)"
-IMAGE_FILE_NAME="aml-s905x-cc-ubuntu-xenial-${IMAGE_VERSION}-${IMAGE_LINUX_VERSION}-${IMAGE_FILE_SUFFIX}.img"
+IMAGE_FILE_NAME="aml-s905x-cc-archlinux-aarch64-${IMAGE_VERSION}-${IMAGE_LINUX_VERSION}-${IMAGE_FILE_SUFFIX}.img"
 if [ $RAM -ne 0 ]; then
 	IMAGE_FOLDER="ram/"
 fi
@@ -30,7 +30,7 @@ mkdir -p "$IMAGE_FOLDER"
 if [ $RAM -ne 0 ]; then
 	mount -t tmpfs -o size=1G tmpfs $IMAGE_FOLDER
 fi
-truncate -s 4G "${IMAGE_FOLDER}${IMAGE_FILE_NAME}"
+truncate -s 7G "${IMAGE_FOLDER}${IMAGE_FILE_NAME}"
 fdisk "${IMAGE_FOLDER}${IMAGE_FILE_NAME}" <<EOF
 o
 n
@@ -55,14 +55,31 @@ IMAGE_LOOP_DEV_BOOT="${IMAGE_LOOP_DEV}p1"
 IMAGE_LOOP_DEV_ROOT="${IMAGE_LOOP_DEV}p2"
 partprobe "${IMAGE_LOOP_DEV}"
 mkfs.vfat -n BOOT "${IMAGE_LOOP_DEV_BOOT}"
-mkfs.btrfs -f -L ROOT "${IMAGE_LOOP_DEV_ROOT}"
+mkfs.ext4 -L ROOT "${IMAGE_LOOP_DEV_ROOT}"
 mkdir -p p1 p2
 mount "${IMAGE_LOOP_DEV_BOOT}" p1
 mount "${IMAGE_LOOP_DEV_ROOT}" p2
-btrfs subvolume create p2/@
 sync
 umount p2
-mount -o compress=lzo,noatime,subvol=@ "${IMAGE_LOOP_DEV_ROOT}" p2
+mount -o noatime "${IMAGE_LOOP_DEV_ROOT}" p2
+
+mkdir bsdtar
+cd bsdtar
+wget https://github.com/libarchive/libarchive/archive/v3.3.1.tar.gz
+tar -zxvf v3.3.1.tar.gz
+cd libarchive-3.3.1
+mkdir b
+cd b
+cmake ../
+make bsdtar
+cd ../../..
+
+#download latest archlinuxarm-aarch64
+wget http://archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+bsdtar/libarchive-3.3.1/b/bin/bsdtar -xpf ArchLinuxARM-aarch64-latest.tar.gz -C p2/
+
+rm ArchLinuxARM-aarch64-latest.tar.gz
+rm -fr bsdtar
 
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- install INSTALL_PATH=$PWD/p1/
 cp ${IMAGE_VERSION}/arch/arm64/boot/Image p1/Image
@@ -70,33 +87,16 @@ mkdir -p p1/$(dirname $IMAGE_DEVICE_TREE)
 cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/$(dirname $IMAGE_DEVICE_TREE)
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- headers_install INSTALL_HDR_PATH=$PWD/p2/usr/
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
-#PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
 
-mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
-echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
-mkdir -p p2/usr/bin
+# Mali Kernel driver
+git clone https://github.com/superna9999/meson_gx_mali_450 -b DX910-SW-99002-r7p0-00rel1_meson_gx --depth 1
+(cd meson_gx_mali_450 && KDIR=$PWD/../$IMAGE_VERSION ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- ./build.sh)
+sudo cp meson_gx_mali_450/mali.ko p2/lib/modules/$IMAGE_LINUX_VERSION/kernel/
+sudo depmod -b p2/ -a $IMAGE_LINUX_VERSION
+rm -fr meson_gx_mali_450
+
+# stage 2
 cp $(which "qemu-aarch64-static") p2/usr/bin
-if [ -n "$PROXY" ] ; then
-    http_proxy="$PROXY" debootstrap --arch arm64 --foreign xenial p2
-    http_proxy="$PROXY" chroot p2 /debootstrap/debootstrap --second-stage
-else
-    debootstrap --arch arm64 --foreign xenial p2
-    chroot p2 /debootstrap/debootstrap --second-stage
-fi
-tee p2/etc/apt/sources.list.d/ubuntu-ports.list <<EOF
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial-updates main universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial-security main universe multiverse restricted
-EOF
-tee p2/etc/fstab <<EOF
-/dev/root	/	btrfs	defaults,compress=lzo,noatime,subvol=@ 0 1
-EOF
-if [ -n "$PROXY" ] ; then
-	tee "p2/etc/apt/apt.conf.d/30proxy" <<EOF
-Acquire::http::proxy "http://127.0.0.1:3142";
-EOF
-fi
-
 cp stage2.sh p2/root
 mount -o bind /dev p2/dev
 mount -o bind /dev/pts p2/dev/pts
@@ -104,14 +104,48 @@ chroot p2 /root/stage2.sh
 umount p2/dev/pts
 umount p2/dev
 rm p2/root/stage2.sh
-if [ -n "$PROXY" ] ; then
-	rm p2/etc/apt/apt.conf.d/30proxy
-fi
-rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
+rm p2/usr/bin/qemu-aarch64-static
+
+# libMali Wayland
+wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.15/buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+tar xfz buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+rm buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+
+mkdir -p p2/usr/lib/mali
+cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450/wayland/drm/libMali.so p2/usr/lib/mali/
+cd p2/usr/lib/mali
+ln -s libMali.so libGLESv2.so.2.0
+ln -s libMali.so libGLESv1_CM.so.1.1
+ln -s libMali.so libEGL.so.1.4
+ln -s libMali.so libgbm.so
+ln -s libMali.so libwayland-egl.so
+ln -s libGLESv2.so.2.0 libGLESv2.so.2
+ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
+ln -s libEGL.so.1.4 libEGL.so.1
+ln -s libGLESv2.so.2 libGLESv2.so
+ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
+ln -s libEGL.so.1 libEGL.so
+ln -s libgbm.so libgbm.so.1
+ln -s libwayland-egl.so libwayland-egl.so.1
+ln -s libwayland-egl.so.1 libwayland-egl.so.1.0.0
+cd -
+cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
+echo /usr/lib/mali > p2/etc/ld.so.conf.d/mali.conf
+rm -fr buildroot_openlinux
+
+# Move existing libs elsewhere
+mkdir -p p2/usr/lib/mesa
+mv p2/usr/lib/libgbm.so* p2/usr/lib/mesa
+mv p2/usr/lib/libEGL*.so* p2/usr/lib/mesa
+mv p2/usr/lib/libGLES*.so* p2/usr/lib/mesa
+mv p2/usr/lib/libwayland-egl.so* p2/usr/lib/mesa
+
+# Mali udev rule
+tee p2/etc/udev/rules.d/50-mali.rules <<EOF
+KERNEL=="mali", MODE="0660", GROUP="video"
+EOF
 
 binary-amlogic/mkimage -C none -A arm -T script -d binary-amlogic/boot.cmd p1/boot.scr
-
-btrfs filesystem defragment -f -r p2
 
 umount p2
 umount p1
