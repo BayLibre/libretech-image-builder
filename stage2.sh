@@ -1,5 +1,5 @@
-#!/bin/bash
-set -eux -o pipefail
+#!/bin/dash
+set -eux
 
 mount -t proc proc proc/
 mount -t sysfs sys sys/
@@ -21,35 +21,8 @@ apt-get -y dist-upgrade
 apt-get install -y vim
 apt-get install -y dbus
 service dbus start
-apt-get install -y xubuntu-desktop
+apt-get install -y ubuntu-desktop
 service dbus stop
-
-# Clean up packages
-apt-get -y clean
-apt-get -y autoclean
-
-# OpenGL ES
-apt-get install -y mesa-utils-extra
-
-# disable mesa EGL libs
-rm /etc/ld.so.conf.d/*_EGL.conf
-ldconfig
-
-apt-get install -y build-essential git libtool automake autoconf xutils-dev xserver-xorg-dev xorg-dev libudev-dev
-
-git clone git://github.com/superna9999/xf86-video-armsoc.git -b meson-drm
-cd xf86-video-armsoc
-./autogen.sh
-./configure --prefix=/usr
-make install
-mkdir -p /etc/X11
-cp xorg.conf /etc/X11/
-cd -
-rm -fr xf86-video-armsoc
-
-# Clean up dev packages
-apt-get purge -y build-essential git libtool automake autoconf xutils-dev xserver-xorg-dev xorg-dev libudev-dev
-apt-get -y autoremove
 
 # Clean up packages
 apt-get -y clean

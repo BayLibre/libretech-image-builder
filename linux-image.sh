@@ -8,6 +8,7 @@ PROXY=""
 IMAGE_FOLDER="img/"
 IMAGE_VERSION="linux-libretech"
 IMAGE_DEVICE_TREE="amlogic/meson-gxl-s905x-libretech-cc"
+UBUNTU_RELEASE="bionic"
 if [ ! -z "$1" ]; then
 	IMAGE_VERSION="$1"
 fi
@@ -18,11 +19,15 @@ if [ ! -f "$IMAGE_VERSION/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dts" ]; then
 	echo "Missing Device Tree"
 	exit 1
 fi
+if [ ! -f ${UBUNTU_RELEASE}-base-arm64.tar.gz ]; then
+	echo "Missing Ubuntu Base tarball"
+	exit 1
+fi
 set -eux -o pipefail
 IMAGE_LINUX_LOADADDR="0x1080000"
 IMAGE_LINUX_VERSION=`head -n 1 $IMAGE_VERSION/include/config/kernel.release | xargs echo -n`
 IMAGE_FILE_SUFFIX="$(date +%F)"
-IMAGE_FILE_NAME="aml-s905x-cc-ubuntu-xenial-${IMAGE_VERSION}-${IMAGE_LINUX_VERSION}-${IMAGE_FILE_SUFFIX}.img"
+IMAGE_FILE_NAME="aml-s905x-cc-ubuntu-${UBUNTU_RELEASE}-${IMAGE_VERSION}-${IMAGE_LINUX_VERSION}-${IMAGE_FILE_SUFFIX}.img"
 if [ $RAM -ne 0 ]; then
 	IMAGE_FOLDER="ram/"
 fi
@@ -70,7 +75,6 @@ mkdir -p p1/$(dirname $IMAGE_DEVICE_TREE)
 cp ${IMAGE_VERSION}/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dtb p1/$(dirname $IMAGE_DEVICE_TREE)
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- headers_install INSTALL_HDR_PATH=$PWD/p2/usr/
 PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_install INSTALL_MOD_PATH=$PWD/p2/
-#PATH=$PWD/gcc/bin:$PATH make -C ${IMAGE_VERSION} ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- firmware_install INSTALL_FW_PATH=$PWD/p2/
 
 # Mali Kernel driver
 git clone https://github.com/superna9999/meson_gx_mali_450 -b DX910-SW-99002-r7p0-00rel1_meson_gx --depth 1
@@ -80,21 +84,17 @@ sudo cp meson_gx_mali_450/mali.ko p2/lib/modules/$VER/kernel/
 sudo depmod -b p2/ -a $VER
 rm -fr meson_gx_mali_450
 
+# copy ubuntu base
+tar xfz ${UBUNTU_RELEASE}-base-arm64.tar.gz -C p2/
+
 mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
 mkdir -p p2/usr/bin
 cp $(which "qemu-aarch64-static") p2/usr/bin
-if [ -n "$PROXY" ] ; then
-    http_proxy="$PROXY" debootstrap --arch arm64 --foreign xenial p2
-    http_proxy="$PROXY" chroot p2 /debootstrap/debootstrap --second-stage
-else
-    debootstrap --arch arm64 --foreign xenial p2
-    chroot p2 /debootstrap/debootstrap --second-stage
-fi
 tee p2/etc/apt/sources.list.d/ubuntu-ports.list <<EOF
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial-updates main universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ xenial-security main universe multiverse restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE} universe multiverse restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE}-updates main universe multiverse restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE}-security main universe multiverse restricted
 EOF
 tee p2/etc/fstab <<EOF
 /dev/root	/	btrfs	defaults,compress=lzo,noatime,subvol=@ 0 1
@@ -106,26 +106,26 @@ EOF
 fi
 
 # libMali X11
-wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.12/buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
-tar xfz buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
-rm buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+#wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.12/buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+#tar xfz buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
+#rm buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
 
-mkdir -p p2/usr/lib/mali
-cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450-X/libMali.so p2/usr/lib/mali/
-cd p2/usr/lib/mali
-ln -s libMali.so libGLESv2.so.2.0
-ln -s libMali.so libGLESv1_CM.so.1.1
-ln -s libMali.so libEGL.so.1.4
-ln -s libGLESv2.so.2.0 libGLESv2.so.2
-ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
-ln -s libEGL.so.1.4 libEGL.so.1
-ln -s libGLESv2.so.2 libGLESv2.so
-ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
-ln -s libEGL.so.1 libEGL.so
-cd -
-cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
-echo /usr/lib/mali > p2/etc/ld.so.conf.d/mali.conf
-rm -fr buildroot_openlinux
+#mkdir -p p2/usr/lib/mali
+#cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450-X/libMali.so p2/usr/lib/mali/
+#cd p2/usr/lib/mali
+#ln -s libMali.so libGLESv2.so.2.0
+#ln -s libMali.so libGLESv1_CM.so.1.1
+#ln -s libMali.so libEGL.so.1.4
+#ln -s libGLESv2.so.2.0 libGLESv2.so.2
+#ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
+#ln -s libEGL.so.1.4 libEGL.so.1
+#ln -s libGLESv2.so.2 libGLESv2.so
+#ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
+#ln -s libEGL.so.1 libEGL.so
+#cd -
+#cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
+#echo /usr/lib/mali > p2/etc/ld.so.conf.d/mali.conf
+#rm -fr buildroot_openlinux
 
 cp stage2.sh p2/root
 mount -o bind /dev p2/dev
