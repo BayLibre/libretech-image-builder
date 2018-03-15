@@ -1,0 +1,32 @@
+Format: 1.8
+Date: Thu, 15 Mar 2018 13:37:34 +0100
+Source: mutter
+Binary: mutter libmutter-2-0 mutter-common libmutter-2-dev gir1.2-mutter-2
+Architecture: source
+Version: 3.28.0-1mali0
+Distribution: unstable
+Urgency: medium
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Changed-By: Neil Armstrong <narmstrong@baylibre.com>
+Description:
+ gir1.2-mutter-2 - GObject introspection data for Mutter
+ libmutter-2-0 - window manager library from the Mutter window manager
+ libmutter-2-dev - Development files for the Mutter window manager
+ mutter     - lightweight GTK+ window manager
+ mutter-common - shared files for the Mutter window manager
+Changes:
+ mutter (3.28.0-1mali0) unstable; urgency=medium
+ .
+   * Adapt rules and add patch to enable usage of mali wayland
+Checksums-Sha1:
+ 0f039aaffa0dbab6f13f95dbc7c11c613b164c43 2459 mutter_3.28.0-1mali0.dsc
+ e43bdd520946997cddc45f86d8ffd86817c48241 25696 mutter_3.28.0-1mali0.debian.tar.xz
+ 49b12b7ab92dab8cbd3f21070321877c8ee152e5 18068 mutter_3.28.0-1mali0_source.buildinfo
+Checksums-Sha256:
+ c6083f5d8332e349c43ac2eed5a4e696dd29853b369f66d7d5747895fc55c360 2459 mutter_3.28.0-1mali0.dsc
+ e4d2ba90017103c3e3d04dbd38be5fb63485231d15f38b03b3d8a7bdaff576a9 25696 mutter_3.28.0-1mali0.debian.tar.xz
+ b9206b99593752e49840b42a966fb2c51e7beddad27c2daa6d168a8f82560b94 18068 mutter_3.28.0-1mali0_source.buildinfo
+Files:
+ 33372da6984d70eafb2353c337ce6455 2459 x11 optional mutter_3.28.0-1mali0.dsc
+ 77a9f83657d5f19c0abf8fbec51d0646 25696 x11 optional mutter_3.28.0-1mali0.debian.tar.xz
+ 278a1963dc7a2ed135f60ad2b6744c3d 18068 x11 optional mutter_3.28.0-1mali0_source.buildinfo

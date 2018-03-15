@@ -1,0 +1,53 @@
+Format: 1.8
+Date: Thu, 15 Mar 2018 13:37:34 +0100
+Source: mutter
+Binary: mutter libmutter-2-0 mutter-common libmutter-2-dev gir1.2-mutter-2
+Architecture: source arm64 all
+Version: 3.28.0-1mali0
+Distribution: unstable
+Urgency: medium
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Changed-By: Neil Armstrong <narmstrong@baylibre.com>
+Description:
+ gir1.2-mutter-2 - GObject introspection data for Mutter
+ libmutter-2-0 - window manager library from the Mutter window manager
+ libmutter-2-dev - Development files for the Mutter window manager
+ mutter     - lightweight GTK+ window manager
+ mutter-common - shared files for the Mutter window manager
+Changes:
+ mutter (3.28.0-1mali0) unstable; urgency=medium
+ .
+   * Adapt rules and add patch to enable usage of mali wayland
+Checksums-Sha1:
+ 6185bb110c48f09c513f9e7e0d5a982f37549891 2459 mutter_3.28.0-1mali0.dsc
+ 6a2d7dd8a8f39fa87c53eebdf8ba8a4b20ea7601 25744 mutter_3.28.0-1mali0.debian.tar.xz
+ 17bfdb5af7744f4f0fd730021d58bb248b5e6fd5 157216 gir1.2-mutter-2_3.28.0-1mali0_arm64.deb
+ f6be61ba181fb374e0e04f688273cc092448a7ba 9984476 libmutter-2-0-dbgsym_3.28.0-1mali0_arm64.ddeb
+ 217561d21527414654d165fec585f10b8ef4e885 965584 libmutter-2-0_3.28.0-1mali0_arm64.deb
+ ea2a88989bf6ce0eb4896ae90f5f27452289a39c 557716 libmutter-2-dev_3.28.0-1mali0_arm64.deb
+ f94783a156c7b15fcef9514741686529eb0c2d74 434808 mutter-common_3.28.0-1mali0_all.deb
+ f5a685a434b0aadfcd12d1d2fb9c6f80a52f2c3b 66828 mutter-dbgsym_3.28.0-1mali0_arm64.ddeb
+ 7776895f6566549e6a3caa63157870a5da779d04 20021 mutter_3.28.0-1mali0_arm64.buildinfo
+ 9e8bc4797f3bd5ba0ab5d79f1d0cbde5c455d409 32432 mutter_3.28.0-1mali0_arm64.deb
+Checksums-Sha256:
+ 3a1505260924818165c55aecb4b11f660d2c2f11bb7c43f970f5c49b9c3eb773 2459 mutter_3.28.0-1mali0.dsc
+ c0d502d0e71d6821c3034f4ddda30839de6c5488bf09e838596d585c4d681c3d 25744 mutter_3.28.0-1mali0.debian.tar.xz
+ 9d825d61ce35a76909e2ab52689e4c48a1b44afb6808bf65e00863b84f6bc7f1 157216 gir1.2-mutter-2_3.28.0-1mali0_arm64.deb
+ b67cdaf7931b3d2b47a70481ab00134264c1f86fffac42da0619d2df346675bf 9984476 libmutter-2-0-dbgsym_3.28.0-1mali0_arm64.ddeb
+ daf61efc25f5bd5602094cf58b4f88092488b0f88b6ec3444d3ccf347d96a479 965584 libmutter-2-0_3.28.0-1mali0_arm64.deb
+ b1ae97448caa3761aa5a8f99c5e40b866cce4675956131d81dc21d2f5fcea152 557716 libmutter-2-dev_3.28.0-1mali0_arm64.deb
+ 0af82f6a8786e7a447d0febb6fe5fc667ec068657218be67609cc5aea50d33e3 434808 mutter-common_3.28.0-1mali0_all.deb
+ 1955c0e7c703768ca9fbf3c1c40a1916b74ad87a9066aa127d948540d2b96746 66828 mutter-dbgsym_3.28.0-1mali0_arm64.ddeb
+ 77f7a59a8f88894cfa1ee7f21109fd227fa9a0660d15fadb2f793e6b720ee76f 20021 mutter_3.28.0-1mali0_arm64.buildinfo
+ 00c3aaab73ca86c87c9aeb55fb2e20d20d5d918626df97cc6954e97827dc04c3 32432 mutter_3.28.0-1mali0_arm64.deb
+Files:
+ 0cece60ca75f80aa05057c1a977eb271 2459 x11 optional mutter_3.28.0-1mali0.dsc
+ ee1bc7658519c96f616902bf2351fcb9 25744 x11 optional mutter_3.28.0-1mali0.debian.tar.xz
+ 83b6fdd8c441a67a7d1fd47965faccd6 157216 introspection optional gir1.2-mutter-2_3.28.0-1mali0_arm64.deb
+ 5c51c5b85c5a638b96b8e9c8ab03f0ca 9984476 debug optional libmutter-2-0-dbgsym_3.28.0-1mali0_arm64.ddeb
+ 2afa3d5c567257d32f73f659274a06b8 965584 libs optional libmutter-2-0_3.28.0-1mali0_arm64.deb
+ 34e9cc0b7b524be587445f1c2504f09d 557716 libdevel optional libmutter-2-dev_3.28.0-1mali0_arm64.deb
+ 3cf034a4020d0bc4a8e5f822a258cee0 434808 misc optional mutter-common_3.28.0-1mali0_all.deb
+ f1226a21679b0d539f276ac1eb203d43 66828 debug optional mutter-dbgsym_3.28.0-1mali0_arm64.ddeb
+ aec80fd5c2ed740c43fcb33354f61edb 20021 x11 optional mutter_3.28.0-1mali0_arm64.buildinfo
+ 77c11f0dd10ed1c88cabec9d23b793f2 32432 x11 optional mutter_3.28.0-1mali0_arm64.deb

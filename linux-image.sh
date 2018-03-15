@@ -91,11 +91,6 @@ mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
 mkdir -p p2/usr/bin
 cp $(which "qemu-aarch64-static") p2/usr/bin
-tee p2/etc/apt/sources.list.d/ubuntu-ports.list <<EOF
-deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE} universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE}-updates main universe multiverse restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_RELEASE}-security main universe multiverse restricted
-EOF
 tee p2/etc/fstab <<EOF
 /dev/root	/	btrfs	defaults,compress=lzo,noatime,subvol=@ 0 1
 EOF
@@ -105,43 +100,64 @@ Acquire::http::proxy "http://127.0.0.1:3142";
 EOF
 fi
 
-# libMali X11
-#wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.12/buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
-#tar xfz buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
-#rm buildroot_openlinux_kernel_3.14_wayland_20170630_mali.tar.gz
-
-#mkdir -p p2/usr/lib/mali
-#cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450-X/libMali.so p2/usr/lib/mali/
-#cd p2/usr/lib/mali
-#ln -s libMali.so libGLESv2.so.2.0
-#ln -s libMali.so libGLESv1_CM.so.1.1
-#ln -s libMali.so libEGL.so.1.4
-#ln -s libGLESv2.so.2.0 libGLESv2.so.2
-#ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
-#ln -s libEGL.so.1.4 libEGL.so.1
-#ln -s libGLESv2.so.2 libGLESv2.so
-#ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
-#ln -s libEGL.so.1 libEGL.so
-#cd -
-#cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
-#echo /usr/lib/mali > p2/etc/ld.so.conf.d/mali.conf
-#rm -fr buildroot_openlinux
-
+# Bionic bash is build with PIE and is broken with Qemu, replace it with Xenial one
+mv p2/bin/bash p2/bin/bash.orig
+cp bash.arm64 p2/bin/bash
 cp stage2.sh p2/root
+
+# Copy mutter packages modified for mali
+cp mutter/build/gir1.2-mutter-2_*.deb mutter/build/libmutter-2-0_*.deb mutter/build/mutter_*.deb mutter/build/mutter-common_*.deb p2/root
+
+# Run stage2 from chroot
 mount -o bind /dev p2/dev
 mount -o bind /dev/pts p2/dev/pts
 chroot p2 /root/stage2.sh
 umount p2/dev/pts
 umount p2/dev
+
+rm p2/root/*.deb
+rm p2/usr/bin/qemu-aarch64-static
+mv p2/bin/bash.orig p2/bin/bash
 rm p2/root/stage2.sh
+
 if [ -n "$PROXY" ] ; then
 	rm p2/etc/apt/apt.conf.d/30proxy
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
 
+# libMali Wayland
+wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.15/buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+tar xfz buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+rm buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+
+cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450/wayland/drm/libMali.so p2/usr/lib/aarch64-linux-gnu/
+mkdir -p p2/usr/lib/mesa-disabled/
+cd p2/usr/lib/aarch64-linux-gnu/
+# Move mesa EGL libs to another directory
+mv libEGL* libgbm* libGLESv2* libwayland-egl* ../mesa-disabled/
+# Recreate them around the libMali.so
+ln -s libMali.so libGLESv2.so.2.0
+ln -s libMali.so libGLESv1_CM.so.1.1
+ln -s libMali.so libEGL.so.1.4
+ln -s libMali.so libwayland-egl.so.1.0.0
+ln -s libMali.so libgbm.so.1.0.0
+ln -s libGLESv2.so.2.0 libGLESv2.so.2
+ln -s libGLESv1_CM.so.1.1 libGLESv1_CM.so.1
+ln -s libEGL.so.1.4 libEGL.so.1
+ln -s libGLESv2.so.2 libGLESv2.so
+ln -s libGLESv1_CM.so.1 libGLESv1_CM.so
+ln -s libEGL.so.1 libEGL.so
+ln -s libgbm.so.1.0.0 libgbm.so.1
+ln -s libgbm.so.1 libgbm.so
+ln -s libwayland-egl.so.1.0.0 libwayland-egl.so.1
+ln -s libwayland-egl.so libwayland-egl.so
+cd -
+cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
+rm -fr buildroot_openlinux
+
 # Mali udev rule
-tee p2/root/50-mali.rules <<EOF
-KERNEL=="mali", MODE="0660", GROUP="video"
+tee p2/etc/udev/rules.d/50-mali.rules <<EOF
+KERNEL=="mali", MODE="0666", GROUP="video"
 EOF
 
 binary-amlogic/mkimage -C none -A arm -T script -d binary-amlogic/boot.cmd p1/boot.scr

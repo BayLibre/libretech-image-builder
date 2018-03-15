@@ -1,0 +1,32 @@
+ dpkg-buildpackage -rfakeroot -us -uc -ui -S -sd
+dpkg-buildpackage: info: source package mutter
+dpkg-buildpackage: info: source version 3.28.0-1mali0
+dpkg-buildpackage: info: source distribution unstable
+dpkg-buildpackage: info: source changed by Neil Armstrong <narmstrong@baylibre.com>
+ dpkg-source --before-build mutter-3.28.0
+ fakeroot debian/rules clean
+dh clean --with gir,gnome
+   dh_gnome_clean
+   dh_clean
+ dpkg-source -b mutter-3.28.0
+dpkg-source: info: using source format '3.0 (quilt)'
+dpkg-source: info: building mutter using existing ./mutter_3.28.0.orig.tar.xz
+dpkg-source: info: building mutter in mutter_3.28.0-1mali0.debian.tar.xz
+dpkg-source: info: building mutter in mutter_3.28.0-1mali0.dsc
+ dpkg-genbuildinfo --build=source
+ dpkg-genchanges -sd --build=source >../mutter_3.28.0-1mali0_source.changes
+dpkg-genchanges: info: not including original source code in upload
+ dpkg-source --after-build mutter-3.28.0
+dpkg-source: info: unapplying mali-egl.patch
+dpkg-source: info: unapplying skip-failing-tests-325.patch
+dpkg-source: info: unapplying skip-failing-tests.patch
+dpkg-source: info: unapplying bgo768531_workaround-startup-notifications.patch
+dpkg-buildpackage: info: binary and diff upload (original source NOT included)
+Now running lintian mutter_3.28.0-1mali0_source.changes ...
+E: mutter changes: bad-distribution-in-changes-file unstable
+Finished running lintian.
+Now signing changes and any dsc files...
+ signfile dsc mutter_3.28.0-1mali0.dsc Neil Armstrong <narmstrong@baylibre.com>
+gpg: skipped "Neil Armstrong <narmstrong@baylibre.com>": No secret key
+gpg: /tmp/debsign.HSIMNYI6/mutter_3.28.0-1mali0.dsc: clear-sign failed: No secret key
+debsign: gpg error occurred!  Aborting....
