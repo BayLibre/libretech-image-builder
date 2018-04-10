@@ -9,6 +9,7 @@ IMAGE_FOLDER="img/"
 IMAGE_VERSION="linux-libretech"
 IMAGE_DEVICE_TREE="amlogic/meson-gxl-s905x-libretech-cc"
 UBUNTU_RELEASE="bionic"
+UBUNTU_VERSION="18.04-beta2"
 if [ ! -z "$1" ]; then
 	IMAGE_VERSION="$1"
 fi
@@ -19,7 +20,7 @@ if [ ! -f "$IMAGE_VERSION/arch/arm64/boot/dts/$IMAGE_DEVICE_TREE.dts" ]; then
 	echo "Missing Device Tree"
 	exit 1
 fi
-if [ ! -f ${UBUNTU_RELEASE}-base-arm64.tar.gz ]; then
+if [ ! -f ubuntu-base-${UBUNTU_VERSION}-base-arm64.tar.gz ]; then
 	echo "Missing Ubuntu Base tarball"
 	exit 1
 fi
@@ -85,7 +86,7 @@ sudo depmod -b p2/ -a $VER
 rm -fr meson_gx_mali_450
 
 # copy ubuntu base
-tar xfz ${UBUNTU_RELEASE}-base-arm64.tar.gz -C p2/
+tar xfz ubuntu-base-${UBUNTU_VERSION}-base-arm64.tar.gz -C p2/
 
 mkdir -p p2/etc/apt/apt.conf.d p2/etc/dpkg/dpkg.cfg.d
 echo "force-unsafe-io" > "p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io"
@@ -125,12 +126,20 @@ if [ -n "$PROXY" ] ; then
 fi
 rm p2/etc/dpkg/dpkg.cfg.d/dpkg-unsafe-io
 
-# libMali Wayland
-wget https://github.com/superna9999/meson_gx_mali_450/releases/download/for-4.15/buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
-tar xfz buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
-rm buildroot_openlinux_kernel_4.9_20180131_mali.tar.gz
+# HiKey libMali for Mali-450
+wget https://developer.arm.com/-/media/Files/downloads/mali-drivers/user-space/hikey/mali-450_r7p0-01rel0_linux_1arm64.tar.gz
+tar xfz mali-450_r7p0-01rel0_linux_1arm64.tar.gz
+rm mali-450_r7p0-01rel0_linux_1arm64.tar.gz
 
-cp buildroot_openlinux/buildroot/package/meson-mali/lib/arm64/r7p0/m450/wayland/drm/libMali.so p2/usr/lib/aarch64-linux-gnu/
+# Notice: We must distribute Mali License along the binary
+mkdir -p p2/usr/share/doc/mali-450_r7p0-01rel0_linux_1arm64/
+cp mali-450_r7p0-01rel0_linux_1+arm64/END_USER_LICENCE_AGREEMENT.txt p2/usr/share/doc/mali-450_r7p0-01rel0_linux_1arm64/
+ln -s /usr/share/doc/mali-450_r7p0-01rel0_linux_1arm64/END_USER_LICENCE_AGREEMENT.txt p2/home/libre/END_USER_LICENCE_AGREEMENT.txt
+
+cp mali-450_r7p0-01rel0_linux_1+arm64/wayland-drm/libMali.so p2/usr/lib/aarch64-linux-gnu/
+chmod 644 p2/usr/lib/aarch64-linux-gnu/libMali.so
+chown root:root p2/usr/lib/aarch64-linux-gnu/libMali.so
+
 mkdir -p p2/usr/lib/mesa-disabled/
 cd p2/usr/lib/aarch64-linux-gnu/
 # Move mesa EGL libs to another directory
@@ -152,8 +161,7 @@ ln -s libgbm.so.1 libgbm.so
 ln -s libwayland-egl.so.1.0.0 libwayland-egl.so.1
 ln -s libwayland-egl.so libwayland-egl.so
 cd -
-cp -ar buildroot_openlinux/buildroot/package/meson-mali/include/* p2/usr/include/
-rm -fr buildroot_openlinux
+rm -fr mali-450_r7p0-01rel0_linux_1+arm64
 
 # Mali udev rule
 tee p2/etc/udev/rules.d/50-mali.rules <<EOF
