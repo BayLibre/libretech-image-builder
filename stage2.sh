@@ -4,6 +4,8 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+
 apt-get update
 apt-get -y install locales
 

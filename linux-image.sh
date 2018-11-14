@@ -9,7 +9,7 @@ IMAGE_FOLDER="img/"
 IMAGE_VERSION="linux-libretech"
 IMAGE_DEVICE_TREE="amlogic/meson-gxl-s905x-libretech-cc"
 UBUNTU_RELEASE="bionic"
-UBUNTU_VERSION="18.04-beta2"
+UBUNTU_VERSION="18.04"
 if [ ! -z "$1" ]; then
 	IMAGE_VERSION="$1"
 fi
@@ -143,7 +143,7 @@ chown root:root p2/usr/lib/aarch64-linux-gnu/libMali.so
 mkdir -p p2/usr/lib/mesa-disabled/
 cd p2/usr/lib/aarch64-linux-gnu/
 # Move mesa EGL libs to another directory
-mv libEGL* libgbm* libGLESv2* libwayland-egl* ../mesa-disabled/
+mv libEGL* libgbm* libGLESv2* libwayland-egl* libGLESv1_CM* ../mesa-disabled/
 # Recreate them around the libMali.so
 ln -s libMali.so libGLESv2.so.2.0
 ln -s libMali.so libGLESv1_CM.so.1.1
