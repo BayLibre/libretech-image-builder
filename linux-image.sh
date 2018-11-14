@@ -9,7 +9,7 @@ IMAGE_FOLDER="img/"
 IMAGE_VERSION="linux-libretech"
 IMAGE_DEVICE_TREE="amlogic/meson-gxl-s905x-libretech-cc"
 UBUNTU_RELEASE="bionic"
-UBUNTU_VERSION="18.04-beta2"
+UBUNTU_VERSION="18.04"
 if [ ! -z "$1" ]; then
 	IMAGE_VERSION="$1"
 fi
