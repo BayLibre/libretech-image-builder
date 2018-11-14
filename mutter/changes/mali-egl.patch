@@ -1,42 +1,8 @@
-Description: Enable support for Mali EGL 
- Make mutter work with Mali Wayland binary.
- .
- mutter (3.27.92-1) experimental; urgency=medium
- .
-   * New upstream release candidate (LP: #1752123, LP: #1718238)
-   * Bump minimum wayland-protocols to 1.12
-   * Drop bump-api.patch: Applied in new release
-Author: Jeremy Bicha <jbicha@debian.org>
-Bug-Ubuntu: https://bugs.launchpad.net/bugs/1718238
-Bug-Ubuntu: https://bugs.launchpad.net/bugs/1752123
-
----
-The information above should follow the Patch Tagging Guidelines, please
-checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
-are templates for supplementary fields that you might want to add:
-
-Origin: <vendor|upstream|other>, <url of original patch>
-Bug: <url in upstream bugtracker>
-Bug-Debian: https://bugs.debian.org/<bugnumber>
-Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
-Forwarded: <no|not-needed|url proving that it has been forwarded>
-Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2018-03-15
-
---- mutter-3.27.92.orig/cogl/cogl/driver/gl/cogl-framebuffer-gl.c
-+++ mutter-3.27.92/cogl/cogl/driver/gl/cogl-framebuffer-gl.c
-@@ -1417,7 +1417,7 @@ _cogl_framebuffer_gl_read_pixels_into_bi
-                                                             &gl_intformat,
-                                                             &gl_format,
-                                                             &gl_type);
--#if HAVE_COGL_GL
-+#ifdef HAVE_COGL_GL
-   /* As we are reading pixels, we want to consider the bitmap according to
-    * its real pixel format, not the swizzled channels we pretend face to the
-    * pipeline.
---- mutter-3.27.92.orig/cogl/cogl/winsys/cogl-winsys-egl-x11.c
-+++ mutter-3.27.92/cogl/cogl/winsys/cogl-winsys-egl-x11.c
-@@ -268,29 +268,12 @@ _cogl_winsys_egl_get_display (void *nati
+diff --git a/cogl/cogl/winsys/cogl-winsys-egl-x11.c b/cogl/cogl/winsys/cogl-winsys-egl-x11.c
+index c1d01dccd..cff84692a 100644
+--- a/cogl/cogl/winsys/cogl-winsys-egl-x11.c
++++ b/cogl/cogl/winsys/cogl-winsys-egl-x11.c
+@@ -268,29 +268,12 @@ _cogl_winsys_egl_get_display (void *native)
    EGLDisplay dpy = NULL;
    const char *client_exts = eglQueryString (NULL, EGL_EXTENSIONS);
  
@@ -72,8 +38,10 @@ Last-Update: 2018-03-15
  
    return eglGetDisplay ((EGLNativeDisplayType) native);
  }
---- mutter-3.27.92.orig/cogl/cogl/winsys/cogl-winsys-glx-private.h
-+++ mutter-3.27.92/cogl/cogl/winsys/cogl-winsys-glx-private.h
+diff --git a/cogl/cogl/winsys/cogl-winsys-glx-private.h b/cogl/cogl/winsys/cogl-winsys-glx-private.h
+index 9fb386ff7..7d081dee7 100644
+--- a/cogl/cogl/winsys/cogl-winsys-glx-private.h
++++ b/cogl/cogl/winsys/cogl-winsys-glx-private.h
 @@ -31,7 +31,9 @@
  #ifndef __COGL_WINSYS_GLX_PRIVATE_H
  #define __COGL_WINSYS_GLX_PRIVATE_H
@@ -84,9 +52,11 @@ Last-Update: 2018-03-15
 +#endif
  
  #endif /* __COGL_WINSYS_GLX_PRIVATE_H */
---- mutter-3.27.92.orig/src/backends/native/meta-cursor-renderer-native.c
-+++ mutter-3.27.92/src/backends/native/meta-cursor-renderer-native.c
-@@ -587,7 +587,7 @@ should_have_hw_cursor (MetaCursorRendere
+diff --git a/src/backends/native/meta-cursor-renderer-native.c b/src/backends/native/meta-cursor-renderer-native.c
+index c7326af42..26fd876f1 100644
+--- a/src/backends/native/meta-cursor-renderer-native.c
++++ b/src/backends/native/meta-cursor-renderer-native.c
+@@ -603,7 +603,7 @@ should_have_hw_cursor (MetaCursorRenderer *renderer,
    if (!can_draw_cursor_unscaled (renderer, cursor_sprite))
      return FALSE;
  
@@ -95,9 +65,11 @@ Last-Update: 2018-03-15
  }
  
  static gboolean
---- mutter-3.27.92.orig/src/backends/native/meta-renderer-native-gles3.c
-+++ mutter-3.27.92/src/backends/native/meta-renderer-native-gles3.c
-@@ -207,8 +207,10 @@ meta_renderer_native_gles3_blit_shared_b
+diff --git a/src/backends/native/meta-renderer-native-gles3.c b/src/backends/native/meta-renderer-native-gles3.c
+index dbc59b6f6..36f34e7ff 100644
+--- a/src/backends/native/meta-renderer-native-gles3.c
++++ b/src/backends/native/meta-renderer-native-gles3.c
+@@ -207,8 +207,10 @@ meta_renderer_native_gles3_blit_shared_bo (MetaEgl        *egl,
  
    width = gbm_bo_get_width (shared_bo);
    height = gbm_bo_get_height (shared_bo);
@@ -108,7 +80,7 @@ Last-Update: 2018-03-15
    n_planes = gbm_bo_get_plane_count (shared_bo);
    for (i = 0; i < n_planes; i++)
      {
-@@ -216,6 +218,7 @@ meta_renderer_native_gles3_blit_shared_b
+@@ -216,6 +218,7 @@ meta_renderer_native_gles3_blit_shared_bo (MetaEgl        *egl,
        offsets[i] = gbm_bo_get_offset (shared_bo, i);
        modifiers[i] = gbm_bo_get_modifier (shared_bo);
      }
@@ -116,9 +88,11 @@ Last-Update: 2018-03-15
  
    egl_image = create_egl_image (egl,
                                  egl_display,
---- mutter-3.27.92.orig/src/backends/native/meta-renderer-native.c
-+++ mutter-3.27.92/src/backends/native/meta-renderer-native.c
-@@ -1592,25 +1592,28 @@ gbm_get_next_fb_id (MetaGpuKms         *
+diff --git a/src/backends/native/meta-renderer-native.c b/src/backends/native/meta-renderer-native.c
+index fc6b22302..94f18d95e 100644
+--- a/src/backends/native/meta-renderer-native.c
++++ b/src/backends/native/meta-renderer-native.c
+@@ -1595,7 +1595,7 @@ gbm_get_next_fb_id (MetaGpuKms         *gpu_kms,
    uint32_t handles[4] = { 0, };
    uint32_t strides[4] = { 0, };
    uint32_t offsets[4] = { 0, };
@@ -127,7 +101,9 @@ Last-Update: 2018-03-15
    int i;
  
    /* Now we need to set the CRTC to whatever is the front buffer */
-   next_bo = gbm_surface_lock_front_buffer (gbm_surface);
+@@ -1607,20 +1607,22 @@ gbm_get_next_fb_id (MetaGpuKms         *gpu_kms,
+       return FALSE;
+     }
  
 -  for (i = 0; i < gbm_bo_get_plane_count (next_bo); i++)
 +  /*for (i = 0; i < gbm_bo_get_plane_count (next_bo); i++)
@@ -138,20 +114,21 @@ Last-Update: 2018-03-15
        modifiers[i] = gbm_bo_get_modifier (next_bo);
      }
 +    */
-+   strides[0] = gbm_bo_get_stride (next_bo);
-+   handles[0] = gbm_bo_get_handle (next_bo).u32;
++  strides[0] = gbm_bo_get_stride (next_bo);
++  handles[0] = gbm_bo_get_handle (next_bo).u32;
  
    kms_fd = meta_gpu_kms_get_fd (gpu_kms);
  
--  if (modifiers[0] != DRM_FORMAT_MOD_INVALID)
-+  if (0) //modifiers[0] != DRM_FORMAT_MOD_INVALID)
+-  if (renderer_native->use_modifiers &&
+-      modifiers[0] != DRM_FORMAT_MOD_INVALID)
++  if (0)
      {
 -      if (drmModeAddFB2WithModifiers (kms_fd,
 +      /*if (drmModeAddFB2WithModifiers (kms_fd,
                                        gbm_bo_get_width (next_bo),
                                        gbm_bo_get_height (next_bo),
                                        gbm_bo_get_format (next_bo),
-@@ -1624,7 +1627,7 @@ gbm_get_next_fb_id (MetaGpuKms         *
+@@ -1634,7 +1636,7 @@ gbm_get_next_fb_id (MetaGpuKms         *gpu_kms,
            g_warning ("Failed to create new back buffer handle: %m");
            gbm_surface_release_buffer (gbm_surface, next_bo);
            return FALSE;
@@ -160,15 +137,18 @@ Last-Update: 2018-03-15
      }
    else if (drmModeAddFB2 (kms_fd,
                            gbm_bo_get_width (next_bo),
-@@ -2006,16 +2009,16 @@ meta_renderer_native_create_surface_gbm
+@@ -2011,19 +2013,19 @@ meta_renderer_native_create_surface_gbm (CoglOnscreen        *onscreen,
      meta_renderer_native_get_gpu_data (renderer_native,
                                         onscreen_native->render_gpu);
  
--  modifiers = get_supported_modifiers (onscreen, format);
-+  //modifiers = get_supported_modifiers (onscreen, format);
+-  if (renderer_native->use_modifiers)
++  /*if (renderer_native->use_modifiers)
+     modifiers = get_supported_modifiers (onscreen, format);
+-  else
++  else*/
+     modifiers = NULL;
  
--  if (modifiers)
-+  if (0) //modifiers)
+   if (modifiers)
      {
 -      new_gbm_surface =
 +      /*new_gbm_surface =
@@ -179,34 +159,35 @@ Last-Update: 2018-03-15
 -      g_array_free (modifiers, TRUE);
 +      g_array_free (modifiers, TRUE);*/
      }
-   else
-     {
-@@ -3068,12 +3071,21 @@ create_renderer_gpu_data_gbm (MetaRender
+ 
+   if (!new_gbm_surface)
+@@ -3077,12 +3079,20 @@ create_renderer_gpu_data_gbm (MetaRendererNative  *renderer_native,
                                                 gbm_device, NULL, error);
    if (egl_display == EGL_NO_DISPLAY)
      {
-+  g_set_error (error, G_IO_ERROR,
-+               G_IO_ERROR_FAILED,
-+               "meta_egl_get_platform_display error"
-+  );
++      g_set_error (error, G_IO_ERROR,
++                   G_IO_ERROR_FAILED,
++                   "meta_egl_get_platform_display error");
        gbm_device_destroy (gbm_device);
        return NULL;
      }
  
--  if (!meta_egl_initialize (egl, egl_display, error))
-+  if (!meta_egl_initialize (egl, egl_display, error)) {
-+  g_set_error (error, G_IO_ERROR,
-+               G_IO_ERROR_FAILED,
-+               "meta_egl_initialize error"
-+  );
-     return NULL;
-+  }
+   if (!meta_egl_initialize (egl, egl_display, error))
+-    return NULL;
++    {
++      g_set_error (error, G_IO_ERROR,
++                   G_IO_ERROR_FAILED,
++                   "meta_egl_initialize error");
++      return NULL;
++    }
  
    renderer_gpu_data = meta_create_renderer_native_gpu_data (gpu_kms);
    renderer_gpu_data->renderer_native = renderer_native;
---- mutter-3.27.92.orig/src/backends/x11/meta-renderer-x11.c
-+++ mutter-3.27.92/src/backends/x11/meta-renderer-x11.c
-@@ -55,7 +55,9 @@ get_x11_cogl_winsys_vtable (CoglRenderer
+diff --git a/src/backends/x11/meta-renderer-x11.c b/src/backends/x11/meta-renderer-x11.c
+index bb52d3caf..55dde6597 100644
+--- a/src/backends/x11/meta-renderer-x11.c
++++ b/src/backends/x11/meta-renderer-x11.c
+@@ -55,7 +55,9 @@ get_x11_cogl_winsys_vtable (CoglRenderer *renderer)
        return _cogl_winsys_egl_xlib_get_vtable ();
      case COGL_DRIVER_GL:
      case COGL_DRIVER_GL3:
